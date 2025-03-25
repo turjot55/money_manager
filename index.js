@@ -9,8 +9,14 @@ const jwt = require('jsonwebtoken');
 const Entry = require('./model/Entry');
 const User = require('./model/User');
 require('dotenv').config();
-
 const app = express();
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Preflight support
+app.use(express.json());
+
+
+// const app = express();
 // app.use(cors());
 app.use(express.json());
 // const corsOptions = {
@@ -24,7 +30,7 @@ app.use(express.json());
 const corsOptions = {
   origin: [
     "http://localhost:3000",
-    "https://moneymanagertooltest.netlify.app/", // ✅ Add your Netlify domain here
+    "https://moneymanagertooltest.netlify.app", // ✅ Add your Netlify domain here
   ],
   credentials: true,
   methods: ["GET", "POST", "DELETE", "PUT"],
