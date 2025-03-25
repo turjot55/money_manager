@@ -11,9 +11,7 @@ const User = require('./model/User');
 require('dotenv').config();
 const app = express();
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Preflight support
-app.use(express.json());
+
 
 
 // const app = express();
@@ -27,6 +25,7 @@ app.use(express.json());
 //   credentials: true,
 // };
 
+
 const corsOptions = {
   origin: [
     "http://localhost:3000",
@@ -36,10 +35,10 @@ const corsOptions = {
   methods: ["GET", "POST", "DELETE", "PUT"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
-
-
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Enable preflight
+app.options("*", cors(corsOptions)); // Preflight support
+
+
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
