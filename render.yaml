@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: money-manager-api
+    env: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: JWT_SECRET
+        value: eyJS0me$Th1ngSup3rS3cure_456!@#uNtRuSTabLeKey
+      - key: MONGO_URI
+        value: mongodb+srv://turjot:Papiya5533@cluster0.y8qhs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
