@@ -13,19 +13,35 @@ require('dotenv').config();
 const app = express();
 // app.use(cors());
 app.use(express.json());
+// const corsOptions = {
+//   origin: [
+//     "http://localhost:3000",
+//     "https://money-manager-ym1k.onrender.com", // if deployed later
+//   ],
+//   credentials: true,
+// };
+
 const corsOptions = {
   origin: [
     "http://localhost:3000",
-    "https://money-manager-ym1k.onrender.com", // if deployed later
+    "https://moneymanagertooltest.netlify.app/", // ✅ Add your Netlify domain here
   ],
   credentials: true,
+  methods: ["GET", "POST", "DELETE", "PUT"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
+
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // Enable preflight
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+app.get("/", (req, res) => {
+  res.send("Backend is live");
+});
+
 
 // ✅ Connect to MongoDB
 // mongoose.connect('mongodb://localhost:27017/money-manager', {
