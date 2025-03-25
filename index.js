@@ -11,8 +11,19 @@ const User = require('./model/User');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+// app.use(cors());
 app.use(express.json());
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "https://money-manager-ym1k.onrender.com", // if deployed later
+  ],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Enable preflight
+
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
