@@ -11,14 +11,14 @@ services:
 
     envVars:
       - key: MONGODB_URI
-        value: mongodb+srv://turjot:Papiya5533@cluster0.y8qhs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+        value: monbodburl
       - key: JWT_SECRET
-        value: eyJS0me$Th1ngSup3rS3cure_456!@#uNtRuSTabLeKey
+        value: JWT_SECRET
       - key: RESEND_API_KEY
-        value: re_9BKHoSRU_FjoRb7HE3WM3rQJcSnouX2hz
+        value: resend
       - key: EMAIL_USER
-        value: princetalukder99@gmail.com       # optional, if using email fallback
+        value: optional     # optional, if using email fallback
       - key: EMAIL_PASS
-        value: kujy setq jlrg lmwf    # optional, if using nodemailer fallback
+        value: optional   # optional, if using nodemailer fallback
       - key: PORT
         value: 4000
