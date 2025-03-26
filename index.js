@@ -150,37 +150,32 @@ const crypto = require('crypto');
 app.post("/auth/register", async (req, res) => {
   const { username, email, password } = req.body;
 
-  const existing = await User.findOne({ $or: [{ username }, { email }] });
-  if (existing) return res.status(400).json({ error: "Username or email taken" });
+  const existing = await User.findOne({ $or: [ { email }] });
+  if (existing) return res.status(400).json({ error: " Email taken" });
 
   const hashed = await bcrypt.hash(password, 10);
-  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const verificationToken = require("crypto").randomBytes(32).toString("hex");
 
   const user = new User({ username, email, password: hashed, verificationToken });
   await user.save();
 
-  // Send email
-  // const verifyLink = `https://yourdomain.com/verify-email?token=${verificationToken}`;
-  // const verifyLink = `https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}`;
+  try {
+    const result = await resend.emails.send({
+      from: `moneyManager <${process.env.EMAIL_FROM}>`,
+      to: email,
+      subject: 'Verify your email',
+      html: `<p>Click <a href="http://localhost:3000/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
+    });
 
-  await resend.emails.send({
-    from: 'MoneyManager <onboarding@resend.dev>',
-    to: email,
-    subject: 'Verify your email',
-    html: `<p>Click <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
-  });
-  const emailResponse = await resend.emails.send({
-    from: 'MoneyManager <onboarding@resend.dev>',
-    to: email,
-    subject: 'Verify your email',
-    html: `<p>Click <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
-  });
-  
-  console.log("📧 Resend Response:", emailResponse);
-  
+    console.log("📨 Email sent via Resend:", result); // ✅ this line logs the send result
 
-  res.json({ message: "Registration successful! Please check your email to verify your account." });
+    res.json({ message: "Registration successful! Please check your email to verify your account." });
+  } catch (err) {
+    console.error("❌ Error sending email via Resend:", err);
+    res.status(500).json({ error: "Registration succeeded, but email failed to send." });
+  }
 });
+
 
 
 app.post("/auth/resend-verification", async (req, res) => {
@@ -199,7 +194,7 @@ app.post("/auth/resend-verification", async (req, res) => {
 
   // ✅ Use Resend here instead of transporter.sendMail
   await resend.emails.send({
-    from: 'MoneyManager <onboarding@resend.dev>',
+    from: `moneyManager <${process.env.EMAIL_FROM}>`,
     to: email,
     subject: 'Resend: Verify your email',
     html: `<p>Please verify your email: <a href="${verifyLink}">Click Here</a></p>`,
