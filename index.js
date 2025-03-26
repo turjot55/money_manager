@@ -169,7 +169,14 @@ app.post("/auth/register", async (req, res) => {
     subject: 'Verify your email',
     html: `<p>Click <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
   });
-
+  const emailResponse = await resend.emails.send({
+    from: 'MoneyManager <onboarding@resend.dev>',
+    to: email,
+    subject: 'Verify your email',
+    html: `<p>Click <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
+  });
+  
+  console.log("📧 Resend Response:", emailResponse);
   
 
   res.json({ message: "Registration successful! Please check your email to verify your account." });
@@ -202,34 +209,78 @@ app.post("/auth/resend-verification", async (req, res) => {
 });
 
 
+
+
+
   
+
+// app.get("/auth/verify-email", async (req, res) => {
+//   const { token } = req.query;
+
+//   const user = await User.findOne({ verificationToken: token });
+//   if (!user) return res.status(400).json({ error: "Invalid or expired token" });
+
+//   user.isVerified = true;
+//   user.verificationToken = null;
+//   await user.save();
+
+//   res.json({ message: "Email verified successfully!" });
+// });
 
 app.get("/auth/verify-email", async (req, res) => {
   const { token } = req.query;
 
-  const user = await User.findOne({ verificationToken: token });
-  if (!user) return res.status(400).json({ error: "Invalid or expired token" });
+  try {
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) return res.status(400).json({ error: "Invalid or expired token" });
 
-  user.isVerified = true;
-  user.verificationToken = null;
-  await user.save();
+    user.isVerified = true;
+    user.verificationToken = null;
+    await user.save();
 
-  res.json({ message: "Email verified successfully!" });
+    res.status(200).json({ message: "Email verified successfully!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error during verification." });
+  }
 });
 
 
 
+
+// app.post('/auth/login', async (req, res) => {
+//   const { username, password, email } = req.body;
+
+//   const user = await User.findOne({ username });
+
+//   if (!user) {
+//     return res.status(400).json({ error: "Invalid credentials" });
+//   }
+
+//   if (user.email !== email) {
+//     return res.status(400).json({ error: "Email does not match registered account" });
+//   }
+
+//   const isValid = await bcrypt.compare(password, user.password);
+//   if (!isValid) {
+//     return res.status(400).json({ error: "Invalid credentials" });
+//   }
+
+//   if (!user.isVerified) {
+//     return res.status(403).json({ error: "Please verify your email before logging in." });
+//   }
+
+//   const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET);
+//   res.json({ token });
+// });
+
 app.post('/auth/login', async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, password } = req.body;
 
   const user = await User.findOne({ username });
 
   if (!user) {
     return res.status(400).json({ error: "Invalid credentials" });
-  }
-
-  if (user.email !== email) {
-    return res.status(400).json({ error: "Email does not match registered account" });
   }
 
   const isValid = await bcrypt.compare(password, user.password);
@@ -244,6 +295,7 @@ app.post('/auth/login', async (req, res) => {
   const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET);
   res.json({ token });
 });
+
 
 
 // ✅ Protected Entry Routes
