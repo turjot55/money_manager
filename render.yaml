@@ -3,14 +3,22 @@ services:
     name: money-manager-backend
     env: node
     plan: free
-    branch: main  # or your deployment branch
     region: oregon
+    branch: main  # make sure this is the branch you want to deploy
+
     buildCommand: npm install
-    startCommand: node index.js  # or npm start or nodemon index.js
+    startCommand: node index.js  # or "npm start" if you defined a start script
+
     envVars:
-      - key: MONGO_URI
-        value: your_MongoDB_URI
+      - key: MONGODB_URI
+        value: mongodb+srv://turjot:Papiya5533@cluster0.y8qhs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
       - key: JWT_SECRET
-        value: Your_JWT_token
+        value: eyJS0me$Th1ngSup3rS3cure_456!@#uNtRuSTabLeKey
+      - key: RESEND_API_KEY
+        value: re_9BKHoSRU_FjoRb7HE3WM3rQJcSnouX2hz
+      - key: EMAIL_USER
+        value: princetalukder99@gmail.com       # optional, if using email fallback
+      - key: EMAIL_PASS
+        value: kujy setq jlrg lmwf    # optional, if using nodemailer fallback
       - key: PORT
         value: 4000
