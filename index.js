@@ -161,7 +161,7 @@ app.post("/auth/register", async (req, res) => {
 
   try {
     const result = await resend.emails.send({
-      from: `MoneyManager <${process.env.EMAIL_FROM}>`,
+      from: 'MoneyManager <no-reply@accessoriestechbd.com>',
       to: email,
       subject: 'Verify your email',
       html: `<p>Click <a href="http://localhost:3000/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
@@ -194,7 +194,7 @@ app.post("/auth/resend-verification", async (req, res) => {
 
   // ✅ Use Resend here instead of transporter.sendMail
   await resend.emails.send({
-    from: `MoneyManager <${process.env.EMAIL_FROM}>`,
+    from: 'MoneyManager <no-reply@accessoriestechbd.com>',
     to: email,
     subject: 'Resend: Verify your email',
     html: `<p>Please verify your email: <a href="${verifyLink}">Click Here</a></p>`,
