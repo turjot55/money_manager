@@ -192,7 +192,7 @@ app.post("/auth/resend-verification", async (req, res) => {
 
   // ✅ Use Resend here instead of transporter.sendMail
   await resend.emails.send({
-    from: 'YourApp <onboarding@resend.dev>',
+    from: 'MoneyManager <no-reply@yourdomain.com>',
     to: email,
     subject: 'Resend: Verify your email',
     html: `<p>Please verify your email: <a href="${verifyLink}">Click Here</a></p>`,
