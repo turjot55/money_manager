@@ -160,12 +160,40 @@ app.post("/auth/register", async (req, res) => {
   await user.save();
 
   try {
+    // const result = await resend.emails.send({
+    //   from: 'MoneyManager <no-reply@accessoriestechbd.com>',
+    //   to: email,
+    //   subject: 'Verify your email',
+    //   html: `<p>Click <a href="http://localhost:3000/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
+    // });
+
     const result = await resend.emails.send({
       from: 'MoneyManager <no-reply@accessoriestechbd.com>',
       to: email,
       subject: 'Verify your email',
-      html: `<p>Click <a href="http://localhost:3000/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; color: #333;">
+          <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+            <div style="padding: 30px;">
+              <h2 style="color: #4CAF50;">Welcome to Money Manager!</h2>
+              <p>Hi <strong>${username}</strong>,</p>
+              <p>Thank you for signing up! Please verify your email address to complete your registration.</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}" 
+                  style="background-color: #4CAF50; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; display: inline-block; font-weight: bold;">
+                  Verify Email
+                </a>
+              </div>
+              <p>If the button above doesn't work, copy and paste the following URL into your browser:</p>
+              <p style="word-break: break-all;">https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}</p>
+              <hr style="margin-top: 40px;">
+              <p style="font-size: 12px; color: #888;">© 2025 Turja Talukder · Money Manager</p>
+            </div>
+          </div>
+        </div>
+      `,
     });
+    
 
     console.log("📨 Email sent via Resend:", result); // ✅ this line logs the send result
 
