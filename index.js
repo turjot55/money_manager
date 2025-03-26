@@ -10,6 +10,9 @@ const Entry = require('./model/Entry');
 const User = require('./model/User');
 require('dotenv').config();
 const app = express();
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 
 
 
@@ -102,48 +105,146 @@ app.get('/convert', async (req, res) => {
 //   res.json({ message: 'User registered' });
 // });
 
-app.post('/auth/register', async (req, res) => {
-  const { username, password } = req.body;
+// app.post('/auth/register', async (req, res) => {
+//   const { username, password } = req.body;
 
-  try {
-    // ✅ Step 1: Check if 20 users already exist
-    const userCount = await User.countDocuments();
-    if (userCount >= 20) {
-      return res.status(403).json({ error: '❌ Registration closed. 20 users already registered.' });
-    }
+//   try {
+//     // ✅ Step 1: Check if 20 users already exist
+//     const userCount = await User.countDocuments();
+//     if (userCount >= 20) {
+//       return res.status(403).json({ error: '❌ Registration closed. 20 users already registered.' });
+//     }
 
-    // ✅ Step 2: Check if username is already taken
-    const existing = await User.findOne({ username });
-    if (existing) return res.status(400).json({ error: '❌ Username is already taken.' });
+//     // ✅ Step 2: Check if username is already taken
+//     const existing = await User.findOne({ username });
+//     if (existing) return res.status(400).json({ error: '❌ Username is already taken.' });
 
-    // ✅ Step 3: Register the new user
-    const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashed });
-    await user.save();
+//     // ✅ Step 3: Register the new user
+//     const hashed = await bcrypt.hash(password, 10);
+//     const user = new User({ username, password: hashed });
+//     await user.save();
 
-    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET);
-    res.json({ token });
-  } catch (error) {
-    console.error('Registration failed:', error);
-    res.status(500).json({ error: '❌ Registration failed. Try again later.' });
-  }
-});
+//     const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET);
+//     res.json({ token });
+//   } catch (error) {
+//     console.error('Registration failed:', error);
+//     res.status(500).json({ error: '❌ Registration failed. Try again later.' });
+//   }
+// });
+
+const crypto = require('crypto');
+// const nodemailer = require('nodemailer');
+
+
+// const transporter = nodemailer.createTransport({
+//   service: "gmail", // or your SMTP provider
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASS,
+//   },
+// });
+
+
+
+
+app.post("/auth/register", async (req, res) => {
+  const { username, email, password } = req.body;
+
+  const existing = await User.findOne({ $or: [{ username }, { email }] });
+  if (existing) return res.status(400).json({ error: "Username or email taken" });
+
+  const hashed = await bcrypt.hash(password, 10);
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+
+  const user = new User({ username, email, password: hashed, verificationToken });
+  await user.save();
+
+  // Send email
+  // const verifyLink = `https://yourdomain.com/verify-email?token=${verificationToken}`;
+  // const verifyLink = `https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}`;
+
+  await resend.emails.send({
+    from: 'MoneyManager <onboarding@resend.dev>',
+    to: email,
+    subject: 'Verify your email',
+    html: `<p>Click <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
+  });
 
   
 
+  res.json({ message: "Registration successful! Please check your email to verify your account." });
+});
+
+
+app.post("/auth/resend-verification", async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user || user.isVerified) {
+    return res.status(400).json({ error: "User already verified or not found" });
+  }
+
+  const newToken = crypto.randomBytes(32).toString("hex");
+  user.verificationToken = newToken;
+  await user.save();
+
+  const verifyLink = `https://moneymanagertooltest.netlify.app/verify?token=${newToken}`;
+
+  // ✅ Use Resend here instead of transporter.sendMail
+  await resend.emails.send({
+    from: 'YourApp <onboarding@resend.dev>',
+    to: email,
+    subject: 'Resend: Verify your email',
+    html: `<p>Please verify your email: <a href="${verifyLink}">Click Here</a></p>`,
+  });
+
+  res.json({ message: "Verification email resent" });
+});
+
+
+  
+
+app.get("/auth/verify-email", async (req, res) => {
+  const { token } = req.query;
+
+  const user = await User.findOne({ verificationToken: token });
+  if (!user) return res.status(400).json({ error: "Invalid or expired token" });
+
+  user.isVerified = true;
+  user.verificationToken = null;
+  await user.save();
+
+  res.json({ message: "Email verified successfully!" });
+});
+
+
 
 app.post('/auth/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
 
   const user = await User.findOne({ username });
-  if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+
+  if (!user) {
+    return res.status(400).json({ error: "Invalid credentials" });
+  }
+
+  if (user.email !== email) {
+    return res.status(400).json({ error: "Email does not match registered account" });
+  }
 
   const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) return res.status(400).json({ error: 'Invalid credentials' });
+  if (!isValid) {
+    return res.status(400).json({ error: "Invalid credentials" });
+  }
+
+  if (!user.isVerified) {
+    return res.status(403).json({ error: "Please verify your email before logging in." });
+  }
 
   const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET);
   res.json({ token });
 });
+
 
 // ✅ Protected Entry Routes
 app.get('/entries', authenticateToken, async (req, res) => {
