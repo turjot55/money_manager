@@ -148,18 +148,32 @@ const crypto = require('crypto');
 //   },
 // });
 
+const Joi = require('joi');
+
+const registerSchema = Joi.object({
+  username: Joi.string().min(3).required().messages({
+    "string.base": "Username should be a string",
+    "string.min": "Username must be at least 3 characters long",
+    "any.required": "Username is required",
+  }),
+  email: Joi.string().email().required().messages({
+    "string.email": "Invalid email format",
+    "any.required": "Email is required",
+  }),
+  password: Joi.string().min(6).required().messages({
+    "string.min": "Password must be at least 6 characters long",
+    "any.required": "Password is required",
+  }),
+});
 
 
 
-app.post('/auth/register', [
-  body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
-  body('email').isEmail().withMessage('Invalid email format'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-], async (req, res) => {
+app.post('/auth/register', async (req, res) => {
   const { username, email, password } = req.body;
 
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  // ✅ Validate using Joi
+  const { error } = registerSchema.validate({ username, email, password });
+  if (error) return res.status(400).json({ error: error.details[0].message });
 
   const existing = await User.findOne({ email });
   if (existing) return res.status(400).json({ error: "Email taken" });
@@ -199,13 +213,69 @@ app.post('/auth/register', [
     });
 
     console.log("📨 Email sent via Resend:", result);
-
     res.json({ message: "Registration successful! Please check your email to verify your account." });
   } catch (err) {
     console.error("❌ Error sending email via Resend:", err);
     res.status(500).json({ error: "Registration succeeded, but email failed to send." });
   }
 });
+
+
+// app.post('/auth/register', [
+//   body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
+//   body('email').isEmail().withMessage('Invalid email format'),
+//   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+// ], async (req, res) => {
+//   const { username, email, password } = req.body;
+
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+//   const existing = await User.findOne({ email });
+//   if (existing) return res.status(400).json({ error: "Email taken" });
+
+//   const hashed = await bcrypt.hash(password, 10);
+//   const verificationToken = require("crypto").randomBytes(32).toString("hex");
+
+//   const user = new User({ username, email, password: hashed, verificationToken });
+//   await user.save();
+
+//   try {
+//     const result = await resend.emails.send({
+//       from: 'MoneyManager <no-reply@accessoriestechbd.com>',
+//       to: email,
+//       subject: 'Verify your email',
+//       html: `
+//         <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; color: #333;">
+//           <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+//             <div style="padding: 30px;">
+//               <h2 style="color: #4CAF50;">Welcome to Money Manager!</h2>
+//               <p>Hi <strong>${username}</strong>,</p>
+//               <p>Thank you for signing up! Please verify your email address to complete your registration.</p>
+//               <div style="text-align: center; margin: 30px 0;">
+//                 <a href="https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}" 
+//                   style="background-color: #4CAF50; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; display: inline-block; font-weight: bold;">
+//                   Verify Email
+//                 </a>
+//               </div>
+//               <p>If the button above doesn't work, copy and paste the following URL into your browser:</p>
+//               <p style="word-break: break-all;">https://moneymanagertooltest.netlify.app/verify?token=${verificationToken}</p>
+//               <hr style="margin-top: 40px;">
+//               <p style="font-size: 12px; color: #888;">© 2025 Turja Talukder · Money Manager</p>
+//             </div>
+//           </div>
+//         </div>
+//       `,
+//     });
+
+//     console.log("📨 Email sent via Resend:", result);
+
+//     res.json({ message: "Registration successful! Please check your email to verify your account." });
+//   } catch (err) {
+//     console.error("❌ Error sending email via Resend:", err);
+//     res.status(500).json({ error: "Registration succeeded, but email failed to send." });
+//   }
+// });
 
 
 
