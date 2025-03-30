@@ -12,6 +12,8 @@ require('dotenv').config();
 const app = express();
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
+const rateLimit = require("express-rate-limit");
+const { body, validationResult } = require('express-validator');
 
 
 
@@ -49,6 +51,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 app.get("/", (req, res) => {
   res.send("Backend is live");
 });
+
+
 
 
 // ✅ Connect to MongoDB
@@ -147,11 +151,18 @@ const crypto = require('crypto');
 
 
 
-app.post("/auth/register", async (req, res) => {
+app.post('/auth/register', [
+  body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
+  body('email').isEmail().withMessage('Invalid email format'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+], async (req, res) => {
   const { username, email, password } = req.body;
 
-  const existing = await User.findOne({ $or: [ { email }] });
-  if (existing) return res.status(400).json({ error: " Email taken" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const existing = await User.findOne({ email });
+  if (existing) return res.status(400).json({ error: "Email taken" });
 
   const hashed = await bcrypt.hash(password, 10);
   const verificationToken = require("crypto").randomBytes(32).toString("hex");
@@ -160,13 +171,6 @@ app.post("/auth/register", async (req, res) => {
   await user.save();
 
   try {
-    // const result = await resend.emails.send({
-    //   from: 'MoneyManager <no-reply@accessoriestechbd.com>',
-    //   to: email,
-    //   subject: 'Verify your email',
-    //   html: `<p>Click <a href="http://localhost:3000/verify?token=${verificationToken}">here</a> to verify your email.</p>`,
-    // });
-
     const result = await resend.emails.send({
       from: 'MoneyManager <no-reply@accessoriestechbd.com>',
       to: email,
@@ -193,9 +197,8 @@ app.post("/auth/register", async (req, res) => {
         </div>
       `,
     });
-    
 
-    console.log("📨 Email sent via Resend:", result); // ✅ this line logs the send result
+    console.log("📨 Email sent via Resend:", result);
 
     res.json({ message: "Registration successful! Please check your email to verify your account." });
   } catch (err) {
@@ -297,7 +300,34 @@ app.get("/auth/verify-email", async (req, res) => {
 //   res.json({ token });
 // });
 
-app.post('/auth/login', async (req, res) => {
+// app.post('/auth/login', async (req, res) => {
+//   const { username, password } = req.body;
+
+//   const user = await User.findOne({ username });
+
+//   if (!user) {
+//     return res.status(400).json({ error: "Invalid credentials" });
+//   }
+
+//   const isValid = await bcrypt.compare(password, user.password);
+//   if (!isValid) {
+//     return res.status(400).json({ error: "Invalid credentials" });
+//   }
+
+//   if (!user.isVerified) {
+//     return res.status(403).json({ error: "Please verify your email before logging in." });
+//   }
+
+//   // const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET);
+//   const token = jwt.sign(
+//     { id: user._id, username: user.username, email: user.email },
+//     JWT_SECRET,
+//     { expiresIn: "1d" }
+//   );
+//   res.json({ token });
+// });
+
+const loginHandler = async (req, res) => {
   const { username, password } = req.body;
 
   const user = await User.findOne({ username });
@@ -315,9 +345,22 @@ app.post('/auth/login', async (req, res) => {
     return res.status(403).json({ error: "Please verify your email before logging in." });
   }
 
-  const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET);
+  const token = jwt.sign(
+    { id: user._id, username: user.username, email: user.email },
+    process.env.JWT_SECRET
+  );
+
   res.json({ token });
+};
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 10, // limit each IP to 10 requests
+  message: "Too many login attempts. Try again later.",
 });
+app.post("/auth/login", loginLimiter, loginHandler);
+
+
 
 
 
@@ -331,6 +374,7 @@ app.post('/entries', authenticateToken, async (req, res) => {
   const entry = new Entry({
     ...req.body,
     userId: req.user.id,
+    category: req.body.category, // 💡 add this
     date: req.body.date ? new Date(req.body.date) : new Date()
   });
   // const entry = new Entry({ ...req.body, userId: req.user.id });

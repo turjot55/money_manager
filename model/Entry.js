@@ -7,6 +7,8 @@ const entrySchema = new mongoose.Schema({
   incomeCurrency: String,
   fee: Number,
   feeCurrency: String,
+  category: { type: String, required: true },
+
   date: { type: Date, default: Date.now }
 });
 

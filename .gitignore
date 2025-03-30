@@ -27,6 +27,7 @@ yarn-error.log*
 
 # Ignore node_modules (if applicable)
 node_modules/
+render.yaml
 
 # Ignore other sensitive files
 *.key
