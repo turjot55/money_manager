@@ -434,17 +434,39 @@ app.get('/entries', authenticateToken, async (req, res) => {
 });
 
 app.post('/entries', authenticateToken, async (req, res) => {
-  const entry = new Entry({
-    ...req.body,
-    userId: req.user.id,
-    category: req.body.category, // 💡 add this
-    date: req.body.date ? new Date(req.body.date) : new Date()
-  });
-  // const entry = new Entry({ ...req.body, userId: req.user.id });
-  const saved = await entry.save();
-  res.json(saved);
-  
+  try {
+    console.log("📥 Incoming data:", req.body);
+    console.log("🔑 Authenticated user:", req.user);
+
+    const entry = new Entry({
+      ...req.body,
+      userId: req.user.id,
+      category: req.body.category || "Uncategorized",
+      date: req.body.date ? new Date(req.body.date) : new Date()
+    });
+
+    const saved = await entry.save();
+    console.log("✅ Entry saved:", saved);
+    res.status(200).json(saved);
+  } catch (err) {
+    console.error("❌ Error saving entry:", err);
+    res.status(500).json({ error: "Server error while saving entry" });
+  }
 });
+
+
+// app.post('/entries', authenticateToken, async (req, res) => {
+//   const entry = new Entry({
+//     ...req.body,
+//     userId: req.user.id,
+//     category: req.body.category, // 💡 add this
+//     date: req.body.date ? new Date(req.body.date) : new Date()
+//   });
+//   // const entry = new Entry({ ...req.body, userId: req.user.id });
+//   const saved = await entry.save();
+//   res.json(saved);
+  
+// });
 
 
 
