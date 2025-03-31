@@ -1,5 +1,3 @@
-// ✅ Corrected and Cleaned Full Backend (index.js)
-
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -20,15 +18,8 @@ const { body, validationResult } = require('express-validator');
 
 
 // const app = express();
-// app.use(cors());
+app.use(cors());
 app.use(express.json());
-// const corsOptions = {
-//   origin: [
-//     "http://localhost:3000",
-//     "https://money-manager-ym1k.onrender.com", // if deployed later
-//   ],
-//   credentials: true,
-// };
 
 
 const corsOptions = {
