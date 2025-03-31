@@ -18,8 +18,8 @@ const { body, validationResult } = require('express-validator');
 
 
 // const app = express();
-app.use(cors());
-app.use(express.json());
+// app.use(cors());
+// app.use(express.json());
 
 
 const corsOptions = {
@@ -33,6 +33,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // Preflight support
+app.use(express.json());
 
 
 
