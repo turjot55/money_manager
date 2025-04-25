@@ -405,18 +405,49 @@ app.get("/auth/verify-email", async (req, res) => {
 //   res.json({ token });
 // });
 
-const loginHandler = async (req, res) => {
-  const { username, password } = req.body;
+// const loginHandler = async (req, res) => {
+//   const { username, password } = req.body;
 
-  const user = await User.findOne({ username });
+//   const user = await User.findOne({ username });
+
+//   if (!user) {
+//     return res.status(400).json({ error: "Invalid credentials" });
+//   }
+
+//   const isValid = await bcrypt.compare(password, user.password);
+//   if (!isValid) {
+//     return res.status(400).json({ error: "Invalid credentials" });
+//   }
+
+//   if (!user.isVerified) {
+//     return res.status(403).json({ error: "Please verify your email before logging in." });
+//   }
+
+//   const token = jwt.sign(
+//     { id: user._id, username: user.username, email: user.email },
+//     process.env.JWT_SECRET,
+//     {expiresIn: "1d"}
+//   );
+
+//   res.json({ token });
+// };
+
+const loginHandler = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(400).json({ error: "Invalid credentials" });
+    return res.status(400).json({ error: "Invalid email or password" });
   }
 
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) {
-    return res.status(400).json({ error: "Invalid credentials" });
+    return res.status(400).json({ error: "Invalid email or password" });
   }
 
   if (!user.isVerified) {
@@ -424,13 +455,18 @@ const loginHandler = async (req, res) => {
   }
 
   const token = jwt.sign(
-    { id: user._id, username: user.username, email: user.email },
+    {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    },
     process.env.JWT_SECRET,
-    {expiresIn: "1d"}
+    { expiresIn: "1d" }
   );
 
   res.json({ token });
 };
+
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
