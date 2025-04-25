@@ -8,6 +8,8 @@ const Entry = require('./model/Entry');
 const User = require('./model/User');
 require('dotenv').config();
 const app = express();
+
+
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const rateLimit = require("express-rate-limit");
@@ -22,10 +24,24 @@ const { body, validationResult } = require('express-validator');
 // app.use(express.json());
 
 
+// const corsOptions = {
+//   origin: [
+//     "http://localhost:3000",
+//     "https://moneymanagertooltest.netlify.app", // ✅ Add your Netlify domain here
+//   ],
+//   credentials: true,
+//   methods: ["GET", "POST", "DELETE", "PUT"],
+//   allowedHeaders: ["Content-Type", "Authorization"],
+// };
+
+// ✅ Fix the X-Forwarded-For issue
+app.set('trust proxy', 1);
+
+// ✅ Setup middleware
 const corsOptions = {
   origin: [
     "http://localhost:3000",
-    "https://moneymanagertooltest.netlify.app", // ✅ Add your Netlify domain here
+    "https://moneymanagertooltest.netlify.app",
   ],
   credentials: true,
   methods: ["GET", "POST", "DELETE", "PUT"],
